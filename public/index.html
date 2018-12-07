@@ -13,14 +13,19 @@
         <div class="container">
             <div class="columns">
                 <div class="column is-4 is-offset-4">
-                    <h1 class="title has-text-centered">
-                    {{ title }}
-                    </h1>
-                    <div class="box">
-                        <figure class="image" v-if="key != ''">
-                            <img :src="'/getqrcode?key=' + key" alt="">
-                        </figure>
-                    </div>
+                    <template v-if="!isLogin">
+                        <h1 class="title has-text-centered">
+                        {{ title }}
+                        </h1>
+                        <div class="box">
+                            <figure class="image" v-if="key != ''">
+                                <img :src="'/getqrcode?key=' + key" alt="">
+                            </figure>
+                        </div>
+                    </template>
+                    <template v-else>
+                        我已经登录了
+                    </template>
                 </div>
             </div>
         </div>
@@ -35,6 +40,7 @@
         data: {
             title: '企业微信登录模拟',
             key: '',
+            isLogin: false,
         },
         created() {
             this.getKey()
@@ -73,6 +79,14 @@
             },
             getCookie(code) {
                 axios.get("/loginpagewx", {params: {pageKey: 1544178373478405, wwqrlogin: 1, qrcode_key: this.key, code: code}})
+                        .then(response => {
+                            console.log(response)
+                            this.isLogin = true
+                            this.getCorpApp()
+                        })
+            },
+            getCorpApp() {
+                axios.get("/getcorpapp", {params: {qrcode_key: this.key}})
                         .then(response => {
                             console.log(response)
                         })
