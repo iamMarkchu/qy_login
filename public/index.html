@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello Bulma!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+</head>
+<body>
+<div id="app">
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-4 is-offset-4">
+                    <h1 class="title has-text-centered">
+                    {{ title }}
+                    </h1>
+                    <div class="box">
+                        <figure class="image" v-if="key != ''">
+                            <img :src="'/getqrcode?key=' + key" alt="">
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            title: '企业微信登录模拟',
+            key: '',
+        },
+        created() {
+            this.getKey()
+        },
+        methods: {
+            getKey() {
+                axios.get('/getkey').then(response => {
+                    console.log(response)
+                    this.key = response.data
+                    this.listenScan()
+                }).catch(err => {
+                    console.log(err)
+                })
+            },
+            listenScan() {
+                axios.get('/checkstatus', {params: {status: 'QRCODE_SCAN_NEVER', qrcode_key: this.key}})
+                        .then((response) => {
+                            console.log(response)
+                            if (response.data.data.status == 'QRCODE_SCAN_ING') {
+                                this.listenScaning()
+                            } else {
+                                this.listenScan()
+                            }
+                        })
+            },
+            listenScaning() {
+                axios.get('/checkstatus', {params: {status: 'QRCODE_SCAN_ING', qrcode_key: this.key}})
+                        .then((response) => {
+                            if (response.data.data.status == 'QRCODE_SCAN_SUCC') {
+                                console.log(response)
+                                this.getCookie(response.data.data.auth_code)
+                            } else{
+                                this.listenScaning()
+                            }
+                        })
+            },
+            getCookie(code) {
+                axios.get("/loginpagewx", {params: {pageKey: 1544178373478405, wwqrlogin: 1, qrcode_key: this.key, code: code}})
+                        .then(response => {
+                            console.log(response)
+                        })
+            }
+        }
+    })
+</script>
+</html>
